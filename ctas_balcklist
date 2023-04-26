@@ -51,5 +51,5 @@ def send_message(result_list):
     client.chat_postMessage(channel=channel_name, text=message, thread_ts=latest_timestamp)
 
 send_message(result_list)
-time.sleep(1) 
+time.sleep(2) 
 os.system("taskkill /im cmd.exe /f") 

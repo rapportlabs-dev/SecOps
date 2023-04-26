@@ -41,7 +41,7 @@ result_list = [ip + '/32"' for ip in result_list]
 def send_message(result_list):
     channel_id = "C052RV6T6NR"
     channel_name = "#bp-security-request"
-    bot_token = "xoxb-1085348121236-5127715781878-wqkfAeH0UPi51ayGaXjBQ67Y"
+    bot_token = "봇 토큰"
     client = WebClient(token=bot_token)
     today = str(date.today()).replace("-", "")
     client.chat_postMessage(channel=channel_name, text=today+" 유해 IP목록(cc.<@U03UB90PX70>)")

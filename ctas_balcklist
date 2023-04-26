@@ -1,0 +1,55 @@
+import time, os
+import pandas as pd
+from glob import glob
+from datetime import date
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+
+chrome_options = Options()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--window-size=1920,1080')
+driver = webdriver.Chrome(options=chrome_options)
+params = {'behavior': 'allow', 'downloadPath':'C:\\Users\\공지훈\\Downloads'}
+driver.execute_cdp_cmd('Page.setDownloadBehavior', params)
+
+driver.get("https://ctas.krcert.or.kr/index")
+driver.find_element(By.NAME, 'userId').send_keys('rapportlabs')
+driver.find_element(By.NAME, 'userPassword').send_keys('FKvhfoqtm!@3')
+driver.find_element(By.CLASS_NAME, 'btn_login').click()
+# today = str(date.today()).replace("-", "")
+# file_url = "https://ctas.krcert.or.kr/threatnew/worker/download_R?format=csv&type=block_ip&date="+"20230419"+"&level=level2"
+# file_url = "https://ctas.krcert.or.kr/threatnew/worker/download_R?format=csv&type=block_ip&date="+today+"&level=level2"
+driver.get("https://ctas.krcert.or.kr/threatnew/worker/sharesCombine")
+driver.find_element(By.XPATH, "/html/body/div[1]/div/div/div[2]/div[2]/fieldset/div/form/div/select/option[2]").click()
+driver.find_element(By.XPATH, "/html/body/div[1]/div/div/div[2]/div[2]/fieldset/div/form/div/button").click()
+driver.find_element(By.XPATH, "/html/body/div[1]/div/div/div[2]/div[2]/div[2]/ul/li[1]/span[3]/a[1]").click()
+time.sleep(2)
+driver.quit()
+
+csv_file = glob('C:\\Users\\공지훈\\Downloads\\*.csv')
+csv_file = str(csv_file).replace("\\", "").replace("C:Users공지훈Downloads", "").replace("'", "").replace("[", "").replace("]", "")
+df = pd.read_csv("C:\\Users\\공지훈\\Downloads\\"+csv_file)
+black_ip_list = str(df['threat_info'].values).replace("[", "").replace("]", "").replace("\n", "").replace("' '", ",").replace("'", "")
+os.remove("C:\\Users\\공지훈\\Downloads\\"+csv_file)
+result_list = black_ip_list.split(",")
+result_list = [f' - "{ip}' for ip in result_list]
+result_list = [ip + '/32"' for ip in result_list]
+
+def send_message(result_list):
+    channel_id = "C052RV6T6NR"
+    channel_name = "#bp-security-request"
+    bot_token = "xoxb-1085348121236-5127715781878-wqkfAeH0UPi51ayGaXjBQ67Y"
+    client = WebClient(token=bot_token)
+    today = str(date.today()).replace("-", "")
+    client.chat_postMessage(channel=channel_name, text=today+" 유해 IP목록(cc.<@U03UB90PX70>)")
+    response = client.conversations_history(channel=channel_id)  
+    latest_timestamp = response["messages"][0]["ts"]
+    message = "\n".join(result_list)
+    client.chat_postMessage(channel=channel_name, text=message, thread_ts=latest_timestamp)
+
+send_message(result_list)
+time.sleep(1) 
+os.system("taskkill /im cmd.exe /f") 
